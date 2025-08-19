@@ -1,0 +1,184 @@
+# ENS Chain Contracts - Editor Context
+
+## Project Overview
+
+This repository contains the ENS (Ethereum Name Service) chain contracts implementation, which provides a comprehensive system for registering and resolving blockchain chain identifiers through ENS. The system enables human-readable chain names (e.g., `base.cid.eth`) to resolve to standardized chain identifiers and metadata.
+
+## Key Architecture Components
+
+### 1. ChainRegistry Contract (`contracts/registry/ChainRegistry.sol`)
+
+- **Purpose**: Central registry for chain data and ENS node resolution
+- **Key Functions**:
+  - `register()`: Stores chain metadata and generates unique chain ID
+  - `linkNode()`: Links ENS nodes to registered chains
+  - `resolve()`: Resolves ENS nodes to chain IDs
+  - `resolveCAIP2()`: Resolves CAIP-2 hashes to chain IDs
+  - `resolveChainName()`: Resolves chain IDs to human-readable names
+  - `resolveChainMetadataRegistry()`: Finds metadata registry for chain ID
+  - `bumpVersion()`: Updates chain versions (version-only changes)
+  - `updateChainData()`: Updates chain data with new attributes (creates new chain ID)
+
+### 2. ChainMetadataRegistry Contract (`contracts/registry/ChainMetadataRegistry.sol`)
+
+- **Purpose**: Per-chain metadata management and text records
+- **Deployment Pattern**: Cloned for each registered chain
+- **Key Functions**:
+  - `initialize()`: Sets up chain-specific data (one-time, controller-only)
+  - `setText()`: DAO-managed text records (e.g., website, description)
+  - `text()`: Retrieves text records by key
+  - `metadata()`: Returns chain data for ID recomputation
+  - `coinType()`: Returns the BIP-44 coin type for the chain
+
+### 3. ChainReverseResolver Contract (`contracts/reverseResolver/ChainReverseResolver.sol`)
+
+- **Purpose**: Cross-chain reverse resolution using CCIP-Read
+- **Key Features**:
+  - Resolves EVM addresses using L2ReverseRegistrar via Unruggable Gateway
+  - Falls back to default reverse registrar
+  - Supports batch resolution of multiple addresses
+
+### 4. L2ReverseRegistrar Contract (`contracts/reverseRegistrar/L2ReverseRegistrar.sol`)
+
+- **Purpose**: L2-specific reverse registrar deployed on each L2 chain
+- **Key Features**:
+  - Signature-based authorization for setting names
+  - Support for contract ownership verification
+  - Coin type validation
+
+## Data Structures
+
+### ChainData Struct
+
+```solidity
+struct ChainData {
+  string chainName; // Human-readable name (e.g., "base")
+  uint256 settlementChainId; // L1 settlement chain ID
+  string version; // Chain version string
+  address rollupContract; // L2 contract address on L1
+  string chainNamespace; // CAIP-2 namespace (e.g., "eip155")
+  string chainReference; // CAIP-2 reference (e.g., "8453")
+  uint32 coinType; // BIP-44 coin type
+}
+```
+
+### Chain ID Derivation
+
+Chain IDs are deterministically computed using:
+
+```solidity
+chainId = keccak256(abi.encode(
+    chainName,
+    settlementChainId,
+    version,
+    rollupContract,
+    chainNamespace,
+    chainReference
+))
+```
+
+## Resolution Methods
+
+### Forward Resolution (ENS → Chain Data)
+
+- `resolve(bytes32 node)`: Resolves ENS node to chain ID
+- `resolveCAIP2(bytes32 caip2Hash)`: Resolves CAIP-2 hash to chain ID
+
+### Reverse Resolution (Chain ID → Human Data)
+
+- `resolveChainName(bytes32 chainId)`: Resolves chain ID to human-readable name
+- `resolveChainMetadataRegistry(bytes32 chainId)`: Resolves chain ID to metadata registry address
+
+### Metadata Access
+
+- `metadata(bytes32 chainId)`: Returns chain data fields for ID recomputation
+- `ChainMetadataRegistry.text(string key)`: Retrieves chain-specific text records
+
+## Access Control Hierarchy
+
+### Role Hierarchy
+
+- **ENS DAO (Owner)**: Ultimate governance control over the entire system
+- **Controller**: Operational role for managing chain registrations
+- **Chain-Specific DAO**: Manages individual chain metadata and governance
+- **Public**: Anyone can submit registration requests
+
+### Contract Access Control
+
+- **ChainRegistry**: Owner-only functions for registration and updates
+- **ChainMetadataRegistry**: DAO-controlled text records, ENS DAO can reclaim ownership
+- **CidRegistrarController**: Controller manages registrations, ENS DAO controls fees
+
+## Version Management
+
+### Hybrid Approach
+
+- **`bumpVersion()`**: Version-only updates (chain ID unchanged)
+- **`updateChainData()`**: Full data updates (creates new chain ID)
+
+## Key Standards Integration
+
+### ERC-7785 Chain Identifiers
+
+- Chain identifiers are derived from chain attributes using keccak256
+- Supports deterministic chain ID generation
+- Enables human-readable chain names
+
+### ERC-7930 Addresses
+
+- Contains CAIP-10 chainType and CAIP-2 chainReference
+- Used for cross-chain address resolution
+- Integrated with L2ReverseRegistrar for reverse resolution
+
+### ENSIP-10 Extended Resolver
+
+- Supports wildcard resolution for chain names
+- Enables custom resolution logic
+- Used by ChainReverseResolver for cross-chain lookups
+
+## Development Guidelines
+
+### Code Style
+
+- Use OpenZeppelin contracts v5
+- Follow Solidity ^0.8.0 syntax
+- Use custom errors for gas efficiency
+- Include comprehensive NatSpec documentation
+
+### Testing
+
+- Tests located in `test/` directory
+- Use Hardhat for testing framework
+- Include integration tests for cross-chain functionality
+
+### Deployment
+
+- Deployment scripts in `deploy/` directory
+- Support for multiple networks (mainnet, testnets, L2s)
+- Use hardhat-deploy for deployment management
+
+## Key Differences from L2Resolver Specification
+
+This implementation differs from the L2Resolver specification in several ways:
+
+1. **Architecture**: Multi-contract vs single-contract approach
+2. **Governance**: Full governance controls vs minimal authorization
+3. **Cross-chain**: CCIP-Read support vs single-chain only
+4. **Metadata**: Comprehensive metadata management vs basic resolution
+5. **Extensibility**: Modular design vs fixed interface
+6. **Production-ready**: Full feature set vs minimal implementation
+
+## Recent Changes
+
+- Added `resolveChainName()` method for bidirectional resolution
+- Updated architecture documentation with comprehensive resolution methods
+- Enhanced documentation with practical code examples
+- Improved resolution flow diagrams
+
+## Important Notes
+
+- The system is designed for production use with full governance controls
+- Supports both forward and reverse resolution
+- Includes cross-chain interoperability via CCIP-Read
+- Provides comprehensive metadata management per chain
+- Uses deterministic chain ID derivation for consistency
