@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-library ENSCointype {
+library ENSCoinType {
     uint256 internal constant ENSIP11_MSB = 1 << 31; // 0x80000000
 
     /// @notice ENS coinType for a given EVM chainId per ENSIP-11.
     ///         Mainnet (chainId 1) returns 60 (SLIP-44 ETH).
-    function evmCoinType(uint256 chainId) internal pure returns (uint256) {
+    function evmCoinType(uint256 chainId) public pure returns (uint256) {
         if (chainId == 1) return 60; // canonical ETH cointype
         return ENSIP11_MSB | chainId;
     }

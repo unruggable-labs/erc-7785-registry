@@ -3,8 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-v5/access/Ownable.sol";
 import "./interfaces/IChainRegistry.sol";
+import "./libs/ERC7785ChainId.sol";
+import "./libs/CAIP2.sol";
+import "./libs/ENSCoinType.sol";
 
-contract ChainRegistry is IChainRegistry, Ownable {
+contract ChainRegistry is Ownable {
+
+    /// @notice Emit whenever a new chain is registered
+    event ChainRegistered(bytes32 indexed chainId, string chainName);
 
     error ChainNameEmpty();
     error ChainAlreadyRegistered();
@@ -22,18 +28,18 @@ contract ChainRegistry is IChainRegistry, Ownable {
     constructor() Ownable(msg.sender) {}
 
     /// @notice Computes and registers the chain ID for a given ChainData struct
-    /// @param chainData the data used to discern the 7785 chain ID
+    /// @param _chainData the data used to discern the 7785 chain ID
     /// @dev Sets up CAIP-2 reverse lookup for efficient chain resolution
-    function register(ChainData calldata _chainData) external override onlyOwner {
+    function register(ChainData calldata _chainData) external onlyOwner {
 
         // Validate that chainName is not empty
         if (bytes(_chainData.chainName).length == 0) {
             revert ChainNameEmpty();
         }
 
-        bytes32 chainId = computeChainId(_chainData);
+        bytes32 chainId = ERC7785ChainId.computeChainId(_chainData);
 
-        if (chainExists[chainId]) {
+        if (chainData[chainId].rollupContract != address(0)) {
             revert ChainAlreadyRegistered();
         }
 
@@ -46,8 +52,8 @@ contract ChainRegistry is IChainRegistry, Ownable {
         uint32 ensCoinType = _chainData.coinType;
 
         // If the chain is an EVM chain, calculate the ENS coinType subject to ENSIP-11
-        if (_chainData.chainNamespace == "eip155") {
-            ensCoinType = ENSCoinType.evmCoinType(_chainData.chainReference);
+        if (keccak256(abi.encodePacked(_chainData.chainNamespace)) == keccak256(abi.encodePacked("eip155"))) {
+            ensCoinType = uint32(ENSCoinType.evmCoinType(_chainData.settlementChainId));
         }
 
         // Map the ENS coinType to the chain ID if not set
@@ -58,10 +64,21 @@ contract ChainRegistry is IChainRegistry, Ownable {
         emit ChainRegistered(chainId, _chainData.chainName);
     }
 
+    /// @notice Get the chain data for a given 7785 derived chain ID
+    /// @param chainId Chain identifier to look up
+    /// @return exists bool true if the chain exists
+    /// @return ChainData the chain data
+    function chainDataFromId(bytes32 chainId) public view returns (bool exists, ChainData memory) {
+        if (chainData[chainId].rollupContract != address(0)) {
+            exists = true;
+        }
+        return (exists, chainData[chainId]);
+    }
+
     /// @notice Get the chain data for a given CAIP2 namespace and chain reference
     /// @param namespace CAIP2 namespace
     /// @param chainReference CAIP2 chain reference
-    /// @return bool exists true if the chain exists
+    /// @return exists bool true if the chain exists
     /// @return ChainData chainData the chain data
     function chainDataFromCaip2(string memory namespace, string memory chainReference)
         public
@@ -74,20 +91,9 @@ contract ChainRegistry is IChainRegistry, Ownable {
 
     /// @notice Get the chain data for a given ENS coinType
     /// @param ensCoinType ENS coinType to look up
-    /// @return bool exists true if the chain exists
+    /// @return exists bool true if the chain exists
     /// @return ChainData chainData the chain data
     function chainDataFromEnsCoinType(uint256 ensCoinType) external view returns (bool exists, ChainData memory) {
-        return chainDataFromId(ensCoinTypeToChainId(ensCoinType));
-    }
-
-    /// @notice Get the chain data for a given 7785 derived chain ID
-    /// @param chainId Chain identifier to look up
-    /// @return bool exists true if the chain exists
-    /// @return ChainData chainData the chain data
-    function chainDataFromId(bytes32 chainId) external view returns (bool exists, ChainData memory) {
-        if (chainData[chainId].name != "") {
-            exists = true;
-        }
-        return (exists, chainData[chainId]);
+        return chainDataFromId(ensCoinTypeToChainId[ensCoinType]);
     }
 }

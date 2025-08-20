@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./IChainRegistry.sol";
+import "../interfaces/IChainRegistry.sol";
 
 library ERC7785ChainId {
 

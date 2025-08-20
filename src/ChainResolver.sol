@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-v5/access/Ownable.sol";
 import "@openzeppelin/contracts-v5/utils/introspection/IERC165.sol";
 import "./interfaces/IChainRegistry.sol";
-import "./ChainMetadataRegistry.sol";
 
 // ENSIP-10 Interface
 interface IENSIP10 {
@@ -99,15 +98,15 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
     /// @notice Compute ENS namehash for a given chain name
     /// @param chainName Human-readable chain name (e.g., "base")
     /// @return bytes32 ENS namehash for  ${chainName}.cid.eth
-    function computeNode(string memory chainName) internal pure returns (bytes32) {
+    function computeNode(string memory chainName) public pure returns (bytes32) {
         // Start with the TLD (.eth)
-        bytes32 node = keccak256(abi.encodePacked(bytes32(0), keccak256(abi.encodePacked("eth")));
+        bytes32 node = keccak256(abi.encodePacked(bytes32(0), keccak256(abi.encodePacked("eth"))));
         
         // Add .cid subdomain
-        node = keccak256(abi.encodePacked(node, keccak256(abi.encodePacked("cid")));
+        node = keccak256(abi.encodePacked(node, keccak256(abi.encodePacked("cid"))));
         
         // Add the chain name label
-        node = keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(chainName)));
+        node = keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(chainName))));
         
         return node;
     }

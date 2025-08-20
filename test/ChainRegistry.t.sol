@@ -16,15 +16,24 @@ contract ChainRegistryTest is Test {
         vm.startPrank(owner);
 
         // Deploy the implementation contract
-        chainRegistry = new ChainRegistry(owner);
+        chainRegistry = new ChainRegistry();
 
         // Deploy the controller
         chainResolver = new ChainResolver(address(chainRegistry));
+
 
         vm.stopPrank();
     }
 
     function test_ChainRegistryDeployment() public view {
         assertEq(chainRegistry.owner(), owner);
+    }
+
+    function test_NodeGen() public view {
+        string memory chainName = "base";
+
+        //https://ethtools.com/ethereum-name-service/ens-namehash-labelhash-node-generator/base.cid.eth
+        bytes32 expectedNode = 0x1e16f34c43f2046bde82808c3fc6f1ccda19f6846a4aa5e696099a6c1bc1c146;
+        assertEq(chainResolver.computeNode(chainName), expectedNode);
     }
 }
