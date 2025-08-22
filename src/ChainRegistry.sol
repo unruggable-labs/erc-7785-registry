@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts-v5/access/Ownable.sol";
-import "./interfaces/IChainRegistry.sol";
-import "./libs/ERC7785ChainId.sol";
-import "./libs/CAIP2.sol";
-import "./libs/ENSCoinType.sol";
+/**
+ * @title  ERC-7785 Chain Registry
+ * @notice Generates and stores ERC 7785 chain IDs based on use input
+ * @dev    Provides getters for fetching chain data based on known historical 
+ *         chain identification methodologies: CAIP-2, ENS coinType (ENSIP-11)
+ * @author Thomas Clowes (clowes.eth)
+ * @date   2025-08-22
+ */
 
-contract ChainRegistry is Ownable {
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IChainRegistry, ChainData} from "./interfaces/IChainRegistry.sol";
+import {ERC7785ChainId} from "./libs/ERC7785ChainId.sol";
+import {CAIP2} from "./libs/CAIP2.sol";
+import {ENSCoinType} from "./libs/ENSCoinType.sol";
 
-    /// @notice Emit whenever a new chain is registered
-    event ChainRegistered(bytes32 indexed chainId, string chainName);
-
-    error ChainNameEmpty();
-    error ChainAlreadyRegistered();
+contract ChainRegistry is Ownable, IChainRegistry {
 
     // Mapping of chain ID to ChainData
     mapping(bytes32 => ChainData) public chainData;
@@ -30,7 +33,7 @@ contract ChainRegistry is Ownable {
     /// @notice Computes and registers the chain ID for a given ChainData struct
     /// @param _chainData the data used to discern the 7785 chain ID
     /// @dev Sets up CAIP-2 reverse lookup for efficient chain resolution
-    function register(ChainData calldata _chainData) external onlyOwner {
+    function register(ChainData calldata _chainData) external onlyOwner returns (bytes32) {
 
         // Validate that chainName is not empty
         if (bytes(_chainData.chainName).length == 0) {
@@ -62,6 +65,8 @@ contract ChainRegistry is Ownable {
         }
 
         emit ChainRegistered(chainId, _chainData.chainName);
+
+        return chainId;
     }
 
     /// @notice Get the chain data for a given 7785 derived chain ID

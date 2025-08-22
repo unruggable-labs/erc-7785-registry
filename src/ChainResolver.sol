@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts-v5/access/Ownable.sol";
-import "@openzeppelin/contracts-v5/utils/introspection/IERC165.sol";
-import "./interfaces/IChainRegistry.sol";
+/**
+ * @title  ERC-7785 Chain Resolver
+ * @notice Resolves the chain ID for a given subname
+ * @dev    Resolution is done via ENSIP-10
+ *
+ * @author Thomas Clowes (clowes.eth)
+ * @date   2025-08-22
+ */
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {IChainRegistry} from "./interfaces/IChainRegistry.sol";
+
+//import "forge-std/console.sol";
 
 // ENSIP-10 Interface
 interface IENSIP10 {
@@ -16,7 +28,7 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
     error UnsupportedFunction();
 
     // The ChainRegistry contract
-    IChainRegistry public immutable chainRegistry;
+    IChainRegistry public immutable CHAIN_REGISTRY;
 
     // Mapping from ENS node to chain ID
     mapping(bytes32 => bytes32) public nodeToChainId;
@@ -33,7 +45,7 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
     bytes4 private constant ENSIP10_INTERFACE_ID = 0x9061b923; // resolve(bytes,bytes)
 
     constructor(address _chainRegistry) Ownable(msg.sender) {
-        chainRegistry = IChainRegistry(_chainRegistry);
+        CHAIN_REGISTRY = IChainRegistry(_chainRegistry);
     }
 
     /// @notice Check if the contract supports a specific interface
@@ -53,6 +65,8 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
         // Parse the function selector from calldata
         bytes4 selector = bytes4(data[:4]);
         
+        //return abi.encode("hello");
+
         if (selector == TEXT_SELECTOR) {
             // Parse the node and key from the calldata
             (bytes32 node, string memory key) = abi.decode(data[4:], (bytes32, string));
@@ -62,7 +76,11 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
                 // Return the chainId from the mapping
                 bytes32 chainId = nodeToChainId[node];
                 if (chainId != bytes32(0)) {
-                    return abi.encode(chainId);
+                    
+
+        string memory asString = Strings.toHexString(uint256(chainId), 32);
+
+                    return abi.encode(asString);
                 }
                 // Return empty bytes if no chainId found
                 return "";
