@@ -56,7 +56,7 @@ contract ChainRegistry is Ownable, IChainRegistry {
 
         // If the chain is an EVM chain, calculate the ENS coinType subject to ENSIP-11
         if (keccak256(abi.encodePacked(_chainData.chainNamespace)) == keccak256(abi.encodePacked("eip155"))) {
-            ensCoinType = uint32(ENSCoinType.evmCoinType(_chainData.settlementChainId));
+            ensCoinType = uint32(ENSCoinType.evmCoinType(_chainData.chainReference));
         }
 
         // Map the ENS coinType to the chain ID if not set
