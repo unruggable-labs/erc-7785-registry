@@ -4,3 +4,9 @@ out/
 
 # Dotenv file
 .env
+
+# node modules
+node_modules
+
+# bun.lock
+bun.lock

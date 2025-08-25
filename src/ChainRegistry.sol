@@ -11,6 +11,7 @@ pragma solidity ^0.8.25;
  */
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IChainRegistry, ChainData} from "./interfaces/IChainRegistry.sol";
 import {ERC7785ChainId} from "./libs/ERC7785ChainId.sol";
 import {CAIP2} from "./libs/CAIP2.sol";
@@ -56,7 +57,7 @@ contract ChainRegistry is Ownable, IChainRegistry {
 
         // If the chain is an EVM chain, calculate the ENS coinType subject to ENSIP-11
         if (keccak256(abi.encodePacked(_chainData.chainNamespace)) == keccak256(abi.encodePacked("eip155"))) {
-            ensCoinType = uint32(ENSCoinType.evmCoinType(_chainData.chainReference));
+            ensCoinType = uint32(ENSCoinType.evmCoinType(Strings.parseUint(_chainData.chainReference)));
         }
 
         // Map the ENS coinType to the chain ID if not set
