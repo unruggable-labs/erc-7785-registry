@@ -22,7 +22,7 @@ bun run deploy/DeployChainResolver.ts --chain=sepolia
 
 ## Architecture
 
-This architectural approach gives consideration to historic chain identification formats (CAIP-2, SLIP-44, ENS Cointype (ENSIP-11)) as well as current standardization efforts (ERC-7785, ERC-7930).
+This architectural approach gives consideration to historic chain identification formats (CAIP-2, SLIP-44, ENS Cointype (ENSIP-11)) as well as current standardization efforts (ERC-7785, ERC-7930). This PR [Integrate CAIP-2, CAIP-350, and ERC-7930/chain registry references into ERC-7785](https://github.com/unruggable-labs/ERCs/pull/1) highlights the changes to the ERC-7785 chain identifier derivation
 
 It focuses on simplicity.
 
