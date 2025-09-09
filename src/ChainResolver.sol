@@ -26,6 +26,7 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
 
     error ChainNameEmpty();
     error UnsupportedFunction();
+    error LabelAlreadyAssigned();
 
     // The ChainRegistry contract
     IChainRegistry public immutable CHAIN_REGISTRY;
@@ -106,6 +107,11 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
 
         // Calculate the ENS node for ${label}.cid.eth
         bytes32 node = computeNode(label);
+        
+        // Prevent re-assignment of an already assigned label
+        if (nodeToChainId[node] != bytes32(0)) {
+            revert LabelAlreadyAssigned();
+        }
         
         // Assign the chain ID to the node
         nodeToChainId[node] = chainId;

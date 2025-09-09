@@ -33,7 +33,7 @@ if (shouldBegin) {
 
     // Deployment args/libs
     const contractArgs = [chainRegistryDeployment.target];
-    const contractLibs = {}};
+    const contractLibs = {};
 
     // The contract name
     const contractName = 'ChainResolver';

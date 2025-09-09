@@ -8,7 +8,7 @@ struct ChainData {
     address rollupContract;
     string chainNamespace;
     string chainReference;
-    uint32 coinType;
+    uint256 coinType;
 }
 
 interface IChainRegistry {
@@ -18,6 +18,8 @@ interface IChainRegistry {
 
     error ChainNameEmpty();
     error ChainAlreadyRegistered();
+    error ChainNameAlreadyRegistered();
+    error CAIP2HashAlreadyRegistered();
 
     function register(ChainData calldata _chainData) external returns (bytes32);
 }
