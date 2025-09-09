@@ -25,6 +25,11 @@ contract ChainRegistry is Ownable, IChainRegistry {
     // Mapping of CAIP-2 hash to chain ID
     mapping(bytes32 => bytes32) public caip2HashToChainId;
 
+    // Uniqueness guards
+    mapping(bytes32 => bool) public chainNameUsed;
+    // Tracks if a CAIP-2 hash has been used
+    mapping(bytes32 => bool) public caip2HashUsed;
+
     // Mapping of ENS coinType to chain ID
     mapping(uint256 => bytes32) public ensCoinTypeToChainId;
 
@@ -41,27 +46,41 @@ contract ChainRegistry is Ownable, IChainRegistry {
             revert ChainNameEmpty();
         }
 
+        // Enforce unique human-readable chainName
+        bytes32 nameHash = keccak256(abi.encodePacked(_chainData.chainName));
+        if (chainNameUsed[nameHash]) {
+            revert ChainNameAlreadyRegistered();
+        }
+
         bytes32 chainId = ERC7785ChainId.computeChainId(_chainData);
 
         if (chainData[chainId].rollupContract != address(0)) {
             revert ChainAlreadyRegistered();
         }
 
-        chainData[chainId] = _chainData;
-
-        // Compute CAIP-2 hash once and map it to the chain ID
-        bytes32 caip2Hash = CAIP2.computeCaip2Hash(_chainData.chainNamespace, _chainData.chainReference);
-        caip2HashToChainId[caip2Hash] = chainId;
-
-        uint32 ensCoinType = _chainData.coinType;
-
-        // If the chain is an EVM chain, calculate the ENS coinType subject to ENSIP-11
-        if (keccak256(abi.encodePacked(_chainData.chainNamespace)) == keccak256(abi.encodePacked("eip155"))) {
-            ensCoinType = uint32(ENSCoinType.evmCoinType(Strings.parseUint(_chainData.chainReference)));
+        // Compute the ENS coinType (derive only for EVM chains per ENSIP-11)
+        uint256 ensCoinType = _chainData.coinType;
+        bool isEip155 = keccak256(abi.encodePacked(_chainData.chainNamespace))
+            == keccak256(abi.encodePacked("eip155"));
+        if (isEip155) {
+            ensCoinType = ENSCoinType.evmCoinType(Strings.parseUint(_chainData.chainReference));
         }
 
-        // Map the ENS coinType to the chain ID if not set
-        if (ensCoinTypeToChainId[ensCoinType] == bytes32(0)) {
+        ChainData memory toStore = _chainData;
+        toStore.coinType = ensCoinType;
+        chainData[chainId] = toStore;
+        chainNameUsed[nameHash] = true;
+
+        // Compute CAIP-2 hash once and map it to the chain ID (enforce uniqueness)
+        bytes32 caip2Hash = CAIP2.computeCaip2Hash(_chainData.chainNamespace, _chainData.chainReference);
+        if (caip2HashUsed[caip2Hash]) {
+            revert CAIP2HashAlreadyRegistered();
+        }
+        caip2HashToChainId[caip2Hash] = chainId;
+        caip2HashUsed[caip2Hash] = true;
+
+        // Map the ENS coinType to the chain ID only when present (non-zero) and not set
+        if (ensCoinType != 0 && ensCoinTypeToChainId[ensCoinType] == bytes32(0)) {
             ensCoinTypeToChainId[ensCoinType] = chainId;
         }
 
