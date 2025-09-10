@@ -22,4 +22,6 @@ interface IChainRegistry {
     error CAIP2HashAlreadyRegistered();
 
     function register(ChainData calldata _chainData) external returns (bytes32);
+    /// @notice DEMO-ONLY: Unrestricted register for the demo UI. Do NOT use in production.
+    function demoRegister(ChainData calldata _chainData) external returns (bytes32);
 }

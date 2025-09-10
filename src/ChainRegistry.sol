@@ -40,6 +40,17 @@ contract ChainRegistry is Ownable, IChainRegistry {
     /// @param _chainData the data used to discern the 7785 chain ID
     /// @dev Sets up CAIP-2 reverse lookup for efficient chain resolution
     function register(ChainData calldata _chainData) external onlyOwner returns (bytes32) {
+        return _register(_chainData);
+    }
+
+    /// @notice DEMO-ONLY: Unrestricted register for the demo UI. Do NOT use in production.
+    /// @dev     Calls shared internal logic without access control. Left intentionally open for demos.
+    function demoRegister(ChainData calldata _chainData) external returns (bytes32) {
+        return _register(_chainData);
+    }
+
+    /// @notice Shared registration logic used by both owner-gated and demo entrypoints
+    function _register(ChainData calldata _chainData) internal returns (bytes32) {
 
         // Validate that chainName is not empty
         if (bytes(_chainData.chainName).length == 0) {
