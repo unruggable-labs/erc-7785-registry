@@ -178,10 +178,19 @@ export const verifyContract = async (
 
   console.log("Formatted libs: ", formattedLibs);
 
+  const fqNameMap: Record<string, string> = {
+    ENSCoinType: "src/libs/ENSCoinType.sol:ENSCoinType",
+    CAIP2: "src/libs/CAIP2.sol:CAIP2",
+    ERC7785ChainId: "src/libs/ERC7785ChainId.sol:ERC7785ChainId",
+    ChainRegistry: "src/ChainRegistry.sol:ChainRegistry",
+    ChainResolver: "src/ChainResolver.sol:ChainResolver",
+  };
+  const nameOrFQN = fqNameMap[contractName] || contractName;
+
   const commandArgs = [
     "verify-contract",
     contractAddress,
-    contractName,
+    nameOrFQN,
     "--watch",
     "--etherscan-api-key",
     apiKey,
