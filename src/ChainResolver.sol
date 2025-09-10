@@ -101,6 +101,16 @@ contract ChainResolver is Ownable, IERC165, IENSIP10 {
     /// @param chainId The chain ID to assign to the node
     /// @dev Only callable by the owner
     function assign(string calldata label, bytes32 chainId) external onlyOwner {
+        _assign(label, chainId);
+    }
+
+    /// @notice DEMO-ONLY: Unrestricted assign for the demo UI. Do NOT use in production.
+    /// @dev     Calls shared internal logic without access control. Left intentionally open for demos.
+    function demoAssign(string calldata label, bytes32 chainId) external {
+        _assign(label, chainId);
+    }
+
+    function _assign(string calldata label, bytes32 chainId) internal {
         if (bytes(label).length == 0) {
             revert ChainNameEmpty();
         }
